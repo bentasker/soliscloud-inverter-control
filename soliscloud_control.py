@@ -279,8 +279,8 @@ class SolisCloud:
         
         # Build the value        
         value_l = [
-            timings['charge_current'],
-            timings['discharge_current']
+            str(timings['charge_current']),
+            str(timings['discharge_current'])
             ]
         
         for l in timings['slots']:
