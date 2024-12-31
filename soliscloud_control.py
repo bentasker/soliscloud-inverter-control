@@ -42,6 +42,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import requests
 import sys
 import time
@@ -253,11 +254,11 @@ class SolisCloud:
         timings['charge_current'] = slots[0]
         timings['discharge_current'] = slots[1]
         
-        timings["slots"] = [
-            [slots[2], slots[3]],
-            [slots[6], slots[7]],
-            [slots[10], slots[11]],
-            ]
+        timings["slots"] = {
+            "slot1": { "charge": slots[2], "discharge": slots[3]},
+            "slot2": { "charge": slots[6], "discharge": slots[7]},
+            "slot3": { "charge": slots[10], "discharge": slots[11]}
+            }
         
         timings['raw'] = resp
         
@@ -272,18 +273,25 @@ class SolisCloud:
         require the raw attribute (which will be ignored if present)
         '''
         
-        # Build the value
-        value = f"{timings['charge_current']},{timings['discharge_current']},"
+        if not self.validateTimingsObj(timings):
+            # It _probably_ threw an exception so we'll never get here
+            return False
         
-        value_l = []
+        # Build the value        
+        value_l = [
+            timings['charge_current'],
+            timings['discharge_current']
+            ]
+        
         for l in timings['slots']:
-            if len(value_l) > 0:
+            if len(value_l) > 2:
                 value_l = value_l + ["0","0"]
             
-            value_l = value_l + l
+            value_l.append(timings['slots'][l]["charge"])
+            value_l.append(timings['slots'][l]["discharge"])
         
-        value += ",".join(value_l)
-        
+        value = ",".join(value_l)
+        print(value)
         # Construct the request payload
         req_body_d = {
                 "inverterSn": sn,
@@ -297,7 +305,7 @@ class SolisCloud:
         headers = self.doAuth(self.config['api_id'], self.config['api_secret'], req_path, req_body)
                 
         self.printDebug(f'Built request - Headers {headers}, body: {req_body}, path: {req_path}')
-               
+        
         # Place the request
         r = self.postRequest(
             f"{self.config['api_url']}{req_path}",
@@ -313,6 +321,46 @@ class SolisCloud:
         
         return resp
         
+    def validateTimingsObj(self, timings):
+        ''' Ensure that the timings dict meets the expectations of this class
+        
+            This doesn't promise to be perfect, but it'd be good not to
+            go posting dodgy values into the API
+        '''
+
+        if "slots" not in timings:
+            raise ValueError(f'timings validation failed: no slots attribute')
+            return False
+
+        if "charge_current" not in timings:
+            raise ValueError(f'timings validation failed: no charge_current attribute')
+            return False
+        
+        if "discharge_current" not in timings:            
+            raise ValueError(f'timings validation failed: no discharge_current attribute')
+            return False
+
+        # There must always be 3 slots, whether or not they're all in use
+        for slot in ["slot1", "slot2", "slot3"]:
+            if slot not in timings["slots"]:
+                raise ValueError(f'timings validation failed: slots lacks {slot}')
+                return False
+            
+            # There must be charge and discharge, even if 00:00-00:00
+            for t in ["charge", "discharge"]:
+                if t not in timings["slots"][slot]:
+                    raise ValueError(f'timings validation failed: {slot} lacking {t}')
+                    return False
+                
+                if not re.match("[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]", timings["slots"][slot][t]):
+                    raise ValueError(f'timings validation failed: {slot} {t} is not formatted as HH:MM-HH:MM')
+                    return False
+                    
+        return True
+            
+            
+            
+            
 
 
 # Utility functions to help with __main__ runs
@@ -345,8 +393,21 @@ if __name__ == "__main__":
     
     res = soliscloud.readChargeDischargeSchedule(config['inverter'])
     
+    if not res:
+        print("Request failed")
+        sys.exit(1)
+    
     # Testing
-    res['slots'][2][0] = "00:00-00:00"
+    # res['slots'][2][0] = "00:00-00:00"
+    res['slots']['slot1']['charge'] = "00:00-06:30"
+    res['slots']['slot1']['discharge'] = "00:00-00:00"
+    res['slots']['slot2']['charge'] = "12:00-16:00"
+    res['slots']['slot2']['discharge'] = "00:00-00:00"
+    res['slots']['slot3']['charge'] = "00:00-00:00"
+    res['slots']['slot3']['discharge'] = "00:00-00:00"
+    print(res)
+    
+    print(soliscloud.validateTimingsObj(res))
     
     res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     
