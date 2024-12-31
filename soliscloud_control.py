@@ -63,6 +63,48 @@ class SolisCloud:
             "lastreset" : time.time()
             }
 
+    def checkRateLimit(self):
+        ''' Check how many requests we've made and when
+        in order to assess whether we're at risk of hitting
+        service rate limits.
+        
+        The API doc says:
+        
+            Note: The calling frequency of all interfaces is limited to three times every five seconds for the same IP
+        
+        It does not clarify whether we'll get a HTTP 429 or some other status
+        '''
+        
+        # What we want to check is
+        #
+        # Was the last reset more than 5 seconds ago
+        # Have there been >= 3 requests?
+        #
+        now = time.time()
+        # When was the last quota reset?
+        if (now - self.ratelimit['lastreset']) >= 5:
+            self.printDebug(f'RATE_LIMIT_CHECK: Last reset was more than 5 seconds ago')
+            # Should be fine, reset the limit
+            self.ratelimit['lastreset'] = now
+            self.ratelimit['requests'] = 1
+            return True
+        
+        # If we reached this point, we're within the n second boundary
+        # check how many requests have been placed
+        if (self.ratelimit['requests'] + 1) > self.config['api_rate_limit']:
+            self.printDebug(f'RATE_LIMIT_CHECK: Breach - too many requests')
+            # We'd be breaching the rate limit
+            #
+            # We don't increment the counter because we're
+            # preventing the request from being sent yet
+            return False
+        
+        # So we're within the time bounds but haven't yet hit the maximum number of
+        # requests. Increment the counter and approve the request
+        self.printDebug(f'RATE_LIMIT_CHECK: Request approved')
+        self.ratelimit['requests'] += 1
+        return True
+
     def createHMAC(self, signstr, secret, algo):
         ''' Create a HMAC of signstr using secret and algo
         
@@ -165,3 +207,68 @@ class SolisCloud:
         if self.debug:
             print(msg)
         
+
+    def readChargeDischargeSchedule(self, sn):
+        ''' Place a request to the API to read the charge schedule settings
+        '''
+        
+        # Construct the request body
+        req_body_d = {
+                "inverterSn": sn,
+                "cid" : 103
+            }
+        req_body = json.dumps(req_body_d)
+        req_path = "/v2/api/atRead"
+        
+        # Construct an auth header
+        headers = self.doAuth(self.config['api_id'], self.config['api_secret'], req_path, req_body)
+                
+        self.printDebug(f'Built request - Headers {headers}, body: {req_body}, path: {req_path}')
+               
+        # Place the request
+        r = self.postRequest(
+            f"{self.config['api_url']}{req_path}",
+            headers,
+            req_body
+            )
+        
+        resp = r.json()
+        self.printDebug(f'Got response: {resp}')
+        
+        if not resp or "msg" not in resp or resp['msg'] != "success":
+            return False
+        
+        return resp
+        
+
+# Utility functions to help with __main__ runs
+
+
+def configFromEnv():
+    ''' Build a dict of configuration settings based on environment variables
+    '''
+    return {
+        "inverter" : os.getenv("INVERTER_SERIAL", "aaa-bbb-ccc"),
+        "api_id" : int(os.getenv("API_ID", 1234)),
+        "api_secret" : os.getenv("API_SECRET", "abcde"),
+        "api_url" : os.getenv("API_URL", "https://tobeconfirmed").strip('/'),
+        # Max number of requests per 5 seconds
+        "api_rate_limit" : int(os.getenv("API_RATE_LIMIT", 2)),
+        # This is a safety net - maximum seconds to wait if we believe we'll
+        # hit the rate limit. As long as this is higher than api_rate_limit it
+        # should never actually be hit unless there's a bug.
+        "max_ratelimit_wait" : int(os.getenv("API_RATE_LIMIT_MAXWAIT", 8)),
+        "measurement" : os.getenv("MEASUREMENT", "solar_inverter")
+        }
+
+
+if __name__ == "__main__":
+    # Are we running in debug mode?
+    DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+    
+    config = configFromEnv()    
+    soliscloud = SolisCloud(config, debug=DEBUG)
+    
+    res = soliscloud.readChargeDischargeSchedule(config['inverter'])
+    print(res)
+    
