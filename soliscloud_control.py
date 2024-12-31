@@ -263,6 +263,58 @@ class SolisCloud:
         
         return timings
 
+
+    def setChargeDischargeTimings(self, sn, timings):
+        ''' Set charge and discharge rate and timings
+        
+        This expects a dict in the same format as that returned by 
+        readChargeDischargeSchedule with the exception that it doesn't
+        require the raw attribute (which will be ignored if present)
+        '''
+        
+        # Build the value
+        value = f"{timings['charge_current']},{timings['discharge_current']},"
+        
+        value_l = []
+        for l in timings['slots']:
+            if len(value_l) > 0:
+                value_l = value_l + ["0","0"]
+            
+            value_l = value_l + l
+        
+        value += ",".join(value_l)
+        
+        # Construct the request payload
+        req_body_d = {
+                "inverterSn": sn,
+                "cid" : 103,
+                "value" : value
+            }
+        req_body = json.dumps(req_body_d)
+        req_path = "/v2/api/control"
+        
+        # Construct an auth header
+        headers = self.doAuth(self.config['api_id'], self.config['api_secret'], req_path, req_body)
+                
+        self.printDebug(f'Built request - Headers {headers}, body: {req_body}, path: {req_path}')
+               
+        # Place the request
+        r = self.postRequest(
+            f"{self.config['api_url']}{req_path}",
+            headers,
+            req_body
+            )
+        
+        resp = r.json()
+        self.printDebug(f'Got response: {resp}')
+        
+        if not resp or "msg" not in resp or resp['msg'] != "success":
+            return False
+        
+        return resp
+        
+
+
 # Utility functions to help with __main__ runs
 
 
@@ -292,5 +344,9 @@ if __name__ == "__main__":
     soliscloud = SolisCloud(config, debug=DEBUG)
     
     res = soliscloud.readChargeDischargeSchedule(config['inverter'])
-    print(json.dumps(res))
+    
+    # Testing
+    res['slots'][2][0] = "00:00-00:00"
+    
+    res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     
