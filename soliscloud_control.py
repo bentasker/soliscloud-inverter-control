@@ -46,6 +46,7 @@ import re
 import requests
 import sys
 import time
+from datetime import datetime, timedelta
 
 
 class SolisCloud:
@@ -207,6 +208,26 @@ class SolisCloud:
     def printDebug(self, msg):
         if self.debug:
             print(msg)
+        
+
+    def calculateDynamicTimeRange(self, end_hours = 3):
+        ''' Calculate a time range to pass into the API
+        '''
+        
+        now = datetime.now()
+        
+        hour_begin = now.replace(minute=0)
+        hour_end = hour_begin + timedelta(hours=end_hours)
+        
+        if int(hour_begin.strftime("%H")) > int(hour_end.strftime("%H")):
+            # Time wrapped
+            hour_end = hour_end.replace(hour=0)
+        
+        # Turn into a textual range
+        b = hour_begin.strftime("%H:%M")
+        e = hour_end.strftime("%H:%M")
+        
+        return f"{b}-{e}"
         
 
     def readChargeDischargeSchedule(self, sn):
