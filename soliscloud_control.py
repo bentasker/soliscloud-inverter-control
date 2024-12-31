@@ -238,8 +238,30 @@ class SolisCloud:
         if not resp or "msg" not in resp or resp['msg'] != "success":
             return False
         
-        return resp
         
+        # Process the response
+        timings = {}
+        
+        '''
+        The returned string looks like this
+        20,55,00:00-06:00,00:00-00:00,0,0,12:00-16:00,00:00-00:00,0,0,00:00-00:00,00:00-00:00
+        
+        We need to take the first two values (charge and discharge current, respectively) and
+        then iterate through the timeslots
+        '''
+        slots = resp['data']['msg'].split(',')
+        timings['charge_current'] = slots[0]
+        timings['discharge_current'] = slots[1]
+        
+        timings["slots"] = [
+            [slots[2], slots[3]],
+            [slots[6], slots[7]],
+            [slots[10], slots[11]],
+            ]
+        
+        timings['raw'] = resp
+        
+        return timings
 
 # Utility functions to help with __main__ runs
 
@@ -270,5 +292,5 @@ if __name__ == "__main__":
     soliscloud = SolisCloud(config, debug=DEBUG)
     
     res = soliscloud.readChargeDischargeSchedule(config['inverter'])
-    print(res)
+    print(json.dumps(res))
     
