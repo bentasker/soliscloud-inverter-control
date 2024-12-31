@@ -46,7 +46,6 @@ import re
 import requests
 import sys
 import time
-from datetime import datetime, timedelta
 
 
 class SolisCloud:
@@ -196,7 +195,7 @@ class SolisCloud:
             # Otherwise, this request would hit the rate limit wait a bit and try again
             x += 1
             time.sleep(1)
-            if x > self.config("max_ratelimit_wait"):
+            if x > self.config["max_ratelimit_wait"]:
                 self.printDebug("Max ratelimit wait exceeded - something's gone wrong, please report it")
                 sys.exit(1)
             continue
@@ -214,10 +213,10 @@ class SolisCloud:
         ''' Calculate a time range to pass into the API
         '''
         
-        now = datetime.now()
+        now = datetime.datetime.now()
         
         hour_begin = now.replace(minute=0)
-        hour_end = hour_begin + timedelta(hours=end_hours)
+        hour_end = hour_begin + datetime.timedelta(hours=end_hours)
         
         if int(hour_begin.strftime("%H")) > int(hour_end.strftime("%H")):
             # Time wrapped
@@ -337,10 +336,81 @@ class SolisCloud:
         resp = r.json()
         self.printDebug(f'Got response: {resp}')
         
-        if not resp or "msg" not in resp or resp['msg'] != "success":
+        
+        if not resp or "code" not in resp or resp["code"] != "0":
             return False
         
         return resp
+        
+    def startCharge(self, config, hours=3):
+        ''' Start a charge immediately
+        
+        If not stopped before then, it'll stop in hours **or** at midnight
+        whichever comes first
+        '''
+        
+        timerange = self.calculateDynamicTimeRange(hours)
+        self.printDebug(f'Generating a charge timings payload for {timerange}')
+        
+        # Get existing schedule and settings
+        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        
+        if not timings:
+            # Fuck... what do we do now?
+            #
+            # TODO: retries
+            self.printDebug(f'Failed to fetch timings object')
+            return False
+        
+        # Set the charge timing for the relevant slot
+        slot = f"slot{config['dynamic_slot']}"
+        timings['slots'][slot]['charge'] = timerange;
+        timings['slots'][slot]['discharge'] = "00:00-00:00";
+        
+        # Set the schedule
+        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        
+        if not res2:
+            # uh-oh
+            #
+            # TODO: Retries
+            self.printDebug(f'Failed to set timings object')
+            return False
+        
+        return True
+        
+    def stopCharge(self, config):
+        ''' Stop a charge immediately
+        
+        '''
+           
+        # Get existing schedule and settings
+        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        
+        if not timings:
+            # Fuck... what do we do now?
+            #
+            # TODO: retries
+            self.printDebug(f'Failed to fetch timings object')
+            return False
+           
+        # Set the charge timing for the relevant slot
+        slot = f"slot{config['dynamic_slot']}"
+        timings['slots'][slot]['charge'] = "00:00-00:00";
+        timings['slots'][slot]['discharge'] = "00:00-00:00";
+        
+        # Set the schedule
+        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        
+        if not res2:
+            # uh-oh
+            #
+            # TODO: Retries
+            self.printDebug(f'Failed to set timings object')
+            return False
+        
+        return True
+           
         
     def validateTimingsObj(self, timings):
         ''' Ensure that the timings dict meets the expectations of this class
@@ -392,6 +462,10 @@ def configFromEnv():
     '''
     return {
         "inverter" : os.getenv("INVERTER_SERIAL", "aaa-bbb-ccc"),
+        
+        # Which time slot to use when dynamically generating times
+        "dynamic_slot" : os.getenv("DYNAMIC_SLOT", "3"),
+        
         "api_id" : int(os.getenv("API_ID", 1234)),
         "api_secret" : os.getenv("API_SECRET", "abcde"),
         "api_url" : os.getenv("API_URL", "https://tobeconfirmed").strip('/'),
@@ -412,6 +486,7 @@ if __name__ == "__main__":
     config = configFromEnv()    
     soliscloud = SolisCloud(config, debug=DEBUG)
     
+    '''
     res = soliscloud.readChargeDischargeSchedule(config['inverter'])
     
     if not res:
@@ -430,5 +505,9 @@ if __name__ == "__main__":
     
     print(soliscloud.validateTimingsObj(res))
     
-    res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     
+    res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
+    '''
+    
+    #soliscloud.startCharge(config)
+    soliscloud.stopCharge(config)
