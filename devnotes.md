@@ -44,4 +44,10 @@ The example payload looks more like the one that I've just retrieved:
 }
 ```
 
+An additional note is given
+
+> Notice:1. Please set the working mode first.
+> Voltage and current settings can only be set once, for all time periods
+
+So, although there appears to be slots for current before other timeslots, those presumably aren't honoured.
 
