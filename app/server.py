@@ -45,12 +45,21 @@ app = Flask(__name__)
 
 @app.route('/')
 def version():
-    return "Soliscloud Control\n"
+    
+    if not checkAuth(request.authorization):
+        return Response(status=403)
+
+    return "Soliscloud Control - no auth headers\n"    
+
+    
 
 @app.route('/api/v1/startCharge', methods=['POST'])
 def startCharge():
     ''' Trigger charging 
     '''
+    
+    if not checkAuth(request.authorization):
+        return Response(status=403)    
     
     # TODO check if hours are specified
     if soliscloud.startCharge():
@@ -62,6 +71,8 @@ def startCharge():
 def startDischarge():
     ''' Trigger charging 
     '''
+    if not checkAuth(request.authorization):
+        return Response(status=403)    
     
     # TODO check if hours are specified
     if soliscloud.startDischarge():
@@ -73,6 +84,8 @@ def startDischarge():
 def stopCharge():
     ''' Trigger charging 
     '''
+    if not checkAuth(request.authorization):
+        return Response(status=403)    
     
     # TODO check if hours are specified
     if soliscloud.stopCharge():
@@ -84,6 +97,8 @@ def stopCharge():
 def stopDischarge():
     ''' Trigger charging 
     '''
+    if not checkAuth(request.authorization):
+        return Response(status=403)    
     
     # TODO check if hours are specified
     if soliscloud.stopDischarge():
@@ -91,10 +106,38 @@ def stopDischarge():
     else:
         return Response(status=502)
 
+
+def checkAuth(auth):
+    ''' If auth is enabled, check authentication
+    '''
+    
+    if not DO_AUTH:
+        # No auth needed
+        return True
+    
+    if not auth:
+        # No creds in request
+        return False
+    
+    if auth["username"] == USER and auth["password"] == PASS:
+        return True
+    
+    return False
+    
+
 if __name__ == "__main__":
 
     # Are we running in debug mode?
     DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+    DO_AUTH = os.getenv("DO_AUTH", "false").lower() == "true"
+    
+    if DO_AUTH:
+        USER = os.getenv("USER", "solisuser")
+        PASS = os.getenv("PASS", False)
+        if not PASS:
+            import random, string
+            PASS = ''.join(random.choice(string.ascii_lowercase) for i in range(12))
+            print(f"Generated random password: {PASS}")
     
     config = soliscloud_control.configFromEnv()    
     soliscloud = soliscloud_control.SolisCloud(config, debug=DEBUG)
