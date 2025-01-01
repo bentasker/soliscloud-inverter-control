@@ -39,7 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import soliscloud_control
 
-from datetime import datetime as dt
 from flask import Flask, request, Response
 
 app = Flask(__name__)
