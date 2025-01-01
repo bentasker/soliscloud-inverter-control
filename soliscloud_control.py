@@ -229,7 +229,7 @@ class SolisCloud:
         return f"{b}-{e}"
         
 
-    def immediateStart(self, config, action="charge", hours=3):
+    def immediateStart(self, action="charge", hours=3):
         ''' Immediately start an action
         '''
         
@@ -237,7 +237,7 @@ class SolisCloud:
         self.printDebug(f'Generating a {action} timings payload for {timerange}')
         
         # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        timings = soliscloud.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
             # Fuck... what do we do now?
@@ -247,7 +247,7 @@ class SolisCloud:
             return False
         
         # Set the charge timing for the relevant slot
-        slot = f"slot{config['dynamic_slot']}"
+        slot = f"slot{self.config['dynamic_slot']}"
         
         if action == "charge":
             timings['slots'][slot]['charge'] = timerange;
@@ -257,7 +257,7 @@ class SolisCloud:
             timings['slots'][slot]['charge'] = "00:00-00:00";
         
         # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        res2 = soliscloud.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
             # uh-oh
@@ -269,11 +269,11 @@ class SolisCloud:
         return True
 
 
-    def immediateStop(self, config):
+    def immediateStop(self):
         ''' Immediately stop charging and discharging
         '''
         # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        timings = soliscloud.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
             # Fuck... what do we do now?
@@ -283,12 +283,12 @@ class SolisCloud:
             return False
            
         # Set the charge timing for the relevant slot
-        slot = f"slot{config['dynamic_slot']}"
+        slot = f"slot{self.config['dynamic_slot']}"
         timings['slots'][slot]['charge'] = "00:00-00:00";
         timings['slots'][slot]['discharge'] = "00:00-00:00";
         
         # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        res2 = soliscloud.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
             # uh-oh
@@ -413,36 +413,36 @@ class SolisCloud:
         
         return resp
         
-    def startCharge(self, config, hours=3):
+    def startCharge(self, hours=3):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        self.immediateStart(config, "charge", hours)
+        self.immediateStart("charge", hours)
         
-    def stopCharge(self, config):
+    def stopCharge(self):
         ''' Stop a charge immediately
         
         '''
-        self.immediateStop(config)          
+        self.immediateStop()          
 
 
-    def startDischarge(self, config, hours=3):
+    def startDischarge(self, hours=3):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        self.immediateStart(config, "discharge", hours)
+        self.immediateStart("discharge", hours)
         
-    def stopDischarge(self, config):
+    def stopDischarge(self):
         ''' Stop a charge immediately
         
         '''
-        self.immediateStop(config)       
+        self.immediateStop()       
         
     def validateTimingsObj(self, timings):
         ''' Ensure that the timings dict meets the expectations of this class
@@ -541,5 +541,5 @@ if __name__ == "__main__":
     res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     '''
     
-    #soliscloud.startDischarge(config)
-    soliscloud.stopDischarge(config)
+    #soliscloud.startDischarge()
+    soliscloud.stopDischarge()
