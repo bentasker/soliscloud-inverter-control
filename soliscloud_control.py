@@ -229,6 +229,77 @@ class SolisCloud:
         return f"{b}-{e}"
         
 
+    def immediateStart(self, config, action="charge", hours=3):
+        ''' Immediately start an action
+        '''
+        
+        timerange = self.calculateDynamicTimeRange(hours)
+        self.printDebug(f'Generating a {action} timings payload for {timerange}')
+        
+        # Get existing schedule and settings
+        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        
+        if not timings:
+            # Fuck... what do we do now?
+            #
+            # TODO: retries
+            self.printDebug(f'Failed to fetch timings object')
+            return False
+        
+        # Set the charge timing for the relevant slot
+        slot = f"slot{config['dynamic_slot']}"
+        
+        if action == "charge":
+            timings['slots'][slot]['charge'] = timerange;
+            timings['slots'][slot]['discharge'] = "00:00-00:00";
+        else:
+            timings['slots'][slot]['discharge'] = timerange;
+            timings['slots'][slot]['charge'] = "00:00-00:00";
+        
+        # Set the schedule
+        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        
+        if not res2:
+            # uh-oh
+            #
+            # TODO: Retries
+            self.printDebug(f'Failed to set timings object')
+            return False
+        
+        return True
+
+
+    def immediateStop(self, config):
+        ''' Immediately stop charging and discharging
+        '''
+        # Get existing schedule and settings
+        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        
+        if not timings:
+            # Fuck... what do we do now?
+            #
+            # TODO: retries
+            self.printDebug(f'Failed to fetch timings object')
+            return False
+           
+        # Set the charge timing for the relevant slot
+        slot = f"slot{config['dynamic_slot']}"
+        timings['slots'][slot]['charge'] = "00:00-00:00";
+        timings['slots'][slot]['discharge'] = "00:00-00:00";
+        
+        # Set the schedule
+        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        
+        if not res2:
+            # uh-oh
+            #
+            # TODO: Retries
+            self.printDebug(f'Failed to set timings object')
+            return False
+        
+        return True
+    
+    
     def readChargeDischargeSchedule(self, sn):
         ''' Place a request to the API to read the charge schedule settings
         '''
@@ -349,68 +420,29 @@ class SolisCloud:
         whichever comes first
         '''
         
-        timerange = self.calculateDynamicTimeRange(hours)
-        self.printDebug(f'Generating a charge timings payload for {timerange}')
-        
-        # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
-        
-        if not timings:
-            # Fuck... what do we do now?
-            #
-            # TODO: retries
-            self.printDebug(f'Failed to fetch timings object')
-            return False
-        
-        # Set the charge timing for the relevant slot
-        slot = f"slot{config['dynamic_slot']}"
-        timings['slots'][slot]['charge'] = timerange;
-        timings['slots'][slot]['discharge'] = "00:00-00:00";
-        
-        # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
-        
-        if not res2:
-            # uh-oh
-            #
-            # TODO: Retries
-            self.printDebug(f'Failed to set timings object')
-            return False
-        
-        return True
+        self.immediateStart(config, "charge", hours)
         
     def stopCharge(self, config):
         ''' Stop a charge immediately
         
         '''
-           
-        # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(config['inverter'])
+        self.immediateStop(config)          
+
+
+    def startDischarge(self, config, hours=3):
+        ''' Start a charge immediately
         
-        if not timings:
-            # Fuck... what do we do now?
-            #
-            # TODO: retries
-            self.printDebug(f'Failed to fetch timings object')
-            return False
-           
-        # Set the charge timing for the relevant slot
-        slot = f"slot{config['dynamic_slot']}"
-        timings['slots'][slot]['charge'] = "00:00-00:00";
-        timings['slots'][slot]['discharge'] = "00:00-00:00";
+        If not stopped before then, it'll stop in hours **or** at midnight
+        whichever comes first
+        '''
         
-        # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(config['inverter'], timings)
+        self.immediateStart(config, "discharge", hours)
         
-        if not res2:
-            # uh-oh
-            #
-            # TODO: Retries
-            self.printDebug(f'Failed to set timings object')
-            return False
+    def stopDischarge(self, config):
+        ''' Stop a charge immediately
         
-        return True
-           
+        '''
+        self.immediateStop(config)       
         
     def validateTimingsObj(self, timings):
         ''' Ensure that the timings dict meets the expectations of this class
@@ -509,5 +541,5 @@ if __name__ == "__main__":
     res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     '''
     
-    #soliscloud.startCharge(config)
-    soliscloud.stopCharge(config)
+    #soliscloud.startDischarge(config)
+    soliscloud.stopDischarge(config)
