@@ -209,18 +209,21 @@ class SolisCloud:
             print(msg)
         
 
-    def calculateDynamicTimeRange(self, end_hours = 3):
+    def calculateDynamicTimeRange(self, end_hours = 3, exact = False):
         ''' Calculate a time range to pass into the API
         '''
         
         now = datetime.datetime.now()
         
         hour_begin = now.replace(minute=0)
-        hour_end = hour_begin + datetime.timedelta(hours=end_hours)
+        if not exact:
+            hour_end = hour_begin + datetime.timedelta(hours=end_hours)
+        else:
+            hour_end = hour_begin.replace(hour=exact['hour'], minute=exact['minute'])
         
         if int(hour_begin.strftime("%H")) > int(hour_end.strftime("%H")):
             # Time wrapped
-            hour_end = hour_end.replace(hour=0)
+            hour_end = hour_end.replace(hour=0, minute=0)
         
         # Turn into a textual range
         b = hour_begin.strftime("%H:%M")
@@ -233,15 +236,8 @@ class SolisCloud:
         ''' Immediately start an action
         '''
                
-        timerange = self.calculateDynamicTimeRange(hours)
+        timerange = self.calculateDynamicTimeRange(hours, exact)
         self.printDebug(f'Generating a {action} timings payload for {timerange}')
-        
-        if exact:
-            # TODO: We need to check that the provided end time does cross a day
-            # boundary
-            self.printDebug(f'Overriding {action} endtime to {exact}')
-            t = timerange.split("-")
-            timerange = f"{t[0]}-{exact}"
         
         # Get existing schedule and settings
         timings = self.readChargeDischargeSchedule(self.config['inverter'])
@@ -460,14 +456,14 @@ class SolisCloud:
         return self.immediateStop()          
 
 
-    def startDischarge(self, hours=3):
+    def startDischarge(self, hours=3, exact=False):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        return self.immediateStart("discharge", hours)
+        return self.immediateStart("discharge", hours, exact)
         
     def stopDischarge(self):
         ''' Stop a charge immediately

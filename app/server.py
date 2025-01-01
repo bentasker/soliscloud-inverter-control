@@ -71,9 +71,10 @@ def startCharge():
         # Split out the hours and minutes
         t1 = req["end"].split(" ")[1]
         t2 = t1.split(":")
-        exact = f"{t2[0]}:{t2[1]}"
-    
-    
+        exact = {
+            "hour" : int(t2[0]),
+            "minute" : int(t2[1])
+            }
     
     # TODO check if hours are specified
     if soliscloud.startCharge(hours, exact):
