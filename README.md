@@ -38,10 +38,34 @@ export API_URL=https://www.soliscloud.com:13333
 export INVERTER_SERIAL=0987654321
 ```
 
+---
+
+### Example Control Server
+
+This repo also contains a Dockerfile for an example control server, allowing HTTP API calls to be made in order to trigger functions.
+
+The server uses HTTP Basic Authentication by default, so you should set a password in environment variable `PASS`:
+
+```sh
+docker run \
+-d \
+--restart=always \
+--name soliscloudcontrol \
+-e API_ID=$SOLIS_API_KEY_ID \
+-e API_SECRET=$SOLIS_API_KEY_SECRET \
+-e INVERTER_SERIAL=$INVERTER_SERIAL_NUMBER \
+-e DO_AUTH=true \
+-e USER=solisuser \
+-e PASS=$LOCAL_API_PASS \
+-p 8081:8080 \
+registry.bentasker.co.uk/misc/soliscloud-inverter-control:0.1a
+```
+
+
 
 ---
 
 ### Copyright
 
-Copyright (c) 2024 [B Tasker](https://www.bentasker.co.uk)
+Copyright (c) 2025 [B Tasker](https://www.bentasker.co.uk)
 Released under [BSD 3 clause license](https://www.bentasker.co.uk/pages/licenses/bsd-3-clause.html)
