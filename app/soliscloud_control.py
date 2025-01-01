@@ -240,11 +240,18 @@ class SolisCloud:
         timings = self.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
-            # Fuck... what do we do now?
-            #
-            # TODO: retries
             self.printDebug(f'Failed to fetch timings object')
-            return False
+            if not config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
+            time.sleep(config['retry_delay_s'])
+            timings = self.readChargeDischargeSchedule(self.config['inverter'])
+            if not timings:
+                # Out of luck
+                return False
+
         
         # Set the charge timing for the relevant slot
         slot = f"slot{self.config['dynamic_slot']}"
@@ -260,11 +267,17 @@ class SolisCloud:
         res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
-            # uh-oh
-            #
-            # TODO: Retries
-            self.printDebug(f'Failed to set timings object')
-            return False
+            self.printDebug(f'Failed to set timings')
+            if not config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
+            time.sleep(config['retry_delay_s'])
+            if not self.readChargeDischargeSchedule(self.config['inverter']):
+                # Out of luck
+                return False
+
         
         return True
 
@@ -276,11 +289,17 @@ class SolisCloud:
         timings = self.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
-            # Fuck... what do we do now?
-            #
-            # TODO: retries
             self.printDebug(f'Failed to fetch timings object')
-            return False
+            if not config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
+            time.sleep(config['retry_delay_s'])
+            timings = self.readChargeDischargeSchedule(self.config['inverter'])
+            if not timings:
+                # Out of luck
+                return False
            
         # Set the charge timing for the relevant slot
         slot = f"slot{self.config['dynamic_slot']}"
@@ -291,11 +310,16 @@ class SolisCloud:
         res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
-            # uh-oh
-            #
-            # TODO: Retries
-            self.printDebug(f'Failed to set timings object')
-            return False
+            self.printDebug(f'Failed to set timings')
+            if not config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
+            time.sleep(config['retry_delay_s'])
+            if not self.readChargeDischargeSchedule(self.config['inverter']):
+                # Out of luck
+                return False
         
         return True
     
@@ -503,6 +527,11 @@ def configFromEnv():
         "api_url" : os.getenv("API_URL", "https://tobeconfirmed").strip('/'),
         # Max number of requests per 5 seconds
         "api_rate_limit" : int(os.getenv("API_RATE_LIMIT", 2)),
+        
+        # Should we retry, and if so, what's the delay?
+        "do_retry" : os.getenv("RETRIES_ENABLED", "true").lower() == "true",
+        "retry_delay_s" : int(os.getenv("RETRY_DELAY", 3)),
+        
         # This is a safety net - maximum seconds to wait if we believe we'll
         # hit the rate limit. As long as this is higher than api_rate_limit it
         # should never actually be hit unless there's a bug.
@@ -518,9 +547,10 @@ if __name__ == "__main__":
     config = configFromEnv()    
     soliscloud = SolisCloud(config, debug=DEBUG)
     
-    '''
-    res = soliscloud.readChargeDischargeSchedule(config['inverter'])
     
+    res = soliscloud.readChargeDischargeSchedule(config['inverter'])
+    print(res)
+    '''
     if not res:
         print("Request failed")
         sys.exit(1)
@@ -541,5 +571,5 @@ if __name__ == "__main__":
     res2 = soliscloud.setChargeDischargeTimings(config['inverter'], res)
     '''
     
-    #soliscloud.startDischarge()
+    soliscloud.startCharge()
     soliscloud.stopDischarge()
