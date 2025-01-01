@@ -137,7 +137,7 @@ if __name__ == "__main__":
         if not PASS:
             import random, string
             PASS = ''.join(random.choice(string.ascii_lowercase) for i in range(12))
-            print(f"Generated random password: {PASS}")
+            print(f"Generated random password: {USER} / {PASS}")
     
     config = soliscloud_control.configFromEnv()    
     soliscloud = soliscloud_control.SolisCloud(config, debug=DEBUG)
