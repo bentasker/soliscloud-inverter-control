@@ -83,8 +83,8 @@ class SolisCloud:
         #
         now = time.time()
         # When was the last quota reset?
-        if (now - self.ratelimit['lastreset']) >= 5:
-            self.printDebug(f'RATE_LIMIT_CHECK: Last reset was more than 5 seconds ago')
+        if (now - self.ratelimit['lastreset']) >= 1:
+            self.printDebug(f'RATE_LIMIT_CHECK: Last reset was more than 1 seconds ago')
             # Should be fine, reset the limit
             self.ratelimit['lastreset'] = now
             self.ratelimit['requests'] = 1
@@ -525,7 +525,7 @@ def configFromEnv():
         "api_id" : int(os.getenv("API_ID", 1234)),
         "api_secret" : os.getenv("API_SECRET", "abcde"),
         "api_url" : os.getenv("API_URL", "https://tobeconfirmed").strip('/'),
-        # Max number of requests per 5 seconds
+        # Max number of requests per second
         "api_rate_limit" : int(os.getenv("API_RATE_LIMIT", 2)),
         
         # Should we retry, and if so, what's the delay?
