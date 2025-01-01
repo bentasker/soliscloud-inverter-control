@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import soliscloud_control
 
+from datetime import datetime as dt
 from flask import Flask, request, Response
 
 app = Flask(__name__)
@@ -61,8 +62,21 @@ def startCharge():
     if not checkAuth(request.authorization):
         return Response(status=403)    
     
+    hours = 3
+    exact = False
+    
+    req = request.get_json(silent=True)
+    # Was there valid json in the request
+    if req and "end" in req:
+        # Split out the hours and minutes
+        t1 = req["end"].split(" ")[1]
+        t2 = t1.split(":")
+        exact = f"{t2[0]}:{t2[1]}"
+    
+    
+    
     # TODO check if hours are specified
-    if soliscloud.startCharge():
+    if soliscloud.startCharge(hours, exact):
         return Response(status=200)
     else:
         return Response(status=502)

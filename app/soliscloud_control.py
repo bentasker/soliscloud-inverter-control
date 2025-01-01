@@ -229,24 +229,31 @@ class SolisCloud:
         return f"{b}-{e}"
         
 
-    def immediateStart(self, action="charge", hours=3):
+    def immediateStart(self, action="charge", hours=3, exact=False):
         ''' Immediately start an action
         '''
-        
+               
         timerange = self.calculateDynamicTimeRange(hours)
         self.printDebug(f'Generating a {action} timings payload for {timerange}')
+        
+        if exact:
+            # TODO: We need to check that the provided end time does cross a day
+            # boundary
+            self.printDebug(f'Overriding {action} endtime to {exact}')
+            t = timerange.split("-")
+            timerange = f"{t[0]}-{exact}"
         
         # Get existing schedule and settings
         timings = self.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
             self.printDebug(f'Failed to fetch timings object')
-            if not config['do_retry']:
+            if not self.config['do_retry']:
                 # Retries are disabled
                 return False
             
-            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
-            time.sleep(config['retry_delay_s'])
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
             timings = self.readChargeDischargeSchedule(self.config['inverter'])
             if not timings:
                 # Out of luck
@@ -268,12 +275,12 @@ class SolisCloud:
         
         if not res2:
             self.printDebug(f'Failed to set timings')
-            if not config['do_retry']:
+            if not self.config['do_retry']:
                 # Retries are disabled
                 return False
             
-            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
-            time.sleep(config['retry_delay_s'])
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
             if not self.readChargeDischargeSchedule(self.config['inverter']):
                 # Out of luck
                 return False
@@ -290,12 +297,12 @@ class SolisCloud:
         
         if not timings:
             self.printDebug(f'Failed to fetch timings object')
-            if not config['do_retry']:
+            if not self.config['do_retry']:
                 # Retries are disabled
                 return False
             
-            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
-            time.sleep(config['retry_delay_s'])
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
             timings = self.readChargeDischargeSchedule(self.config['inverter'])
             if not timings:
                 # Out of luck
@@ -311,12 +318,12 @@ class SolisCloud:
         
         if not res2:
             self.printDebug(f'Failed to set timings')
-            if not config['do_retry']:
+            if not self.config['do_retry']:
                 # Retries are disabled
                 return False
             
-            self.printDebug(f'Will retry after {config["retry_delay_s"]}s')
-            time.sleep(config['retry_delay_s'])
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
             if not self.readChargeDischargeSchedule(self.config['inverter']):
                 # Out of luck
                 return False
@@ -437,14 +444,14 @@ class SolisCloud:
         
         return resp
         
-    def startCharge(self, hours=3):
+    def startCharge(self, hours=3, exact=False):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        return self.immediateStart("charge", hours)
+        return self.immediateStart("charge", hours, exact)
         
     def stopCharge(self):
         ''' Stop a charge immediately
