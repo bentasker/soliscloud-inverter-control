@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
 import soliscloud_control
 
-from flask import Flask, request
+from flask import Flask, request, Response
 
 app = Flask(__name__)
 
@@ -53,9 +53,43 @@ def startCharge():
     '''
     
     # TODO check if hours are specified
-    soliscloud.startCharge()
+    if soliscloud.startCharge():
+        return Response(status=200)
+    else:
+        return Response(status=502)
 
+@app.route('/api/v1/startDischarge', methods=['POST'])
+def startDischarge():
+    ''' Trigger charging 
+    '''
+    
+    # TODO check if hours are specified
+    if soliscloud.startDischarge():
+        return Response(status=200)
+    else:
+        return Response(status=502)
 
+@app.route('/api/v1/stopCharge', methods=['POST'])
+def stopCharge():
+    ''' Trigger charging 
+    '''
+    
+    # TODO check if hours are specified
+    if soliscloud.stopCharge():
+        return Response(status=200)
+    else:
+        return Response(status=502)
+
+@app.route('/api/v1/stopDischarge', methods=['POST'])
+def stopDischarge():
+    ''' Trigger charging 
+    '''
+    
+    # TODO check if hours are specified
+    if soliscloud.stopDischarge():
+        return Response(status=200)
+    else:
+        return Response(status=502)
 
 if __name__ == "__main__":
 

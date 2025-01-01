@@ -420,13 +420,13 @@ class SolisCloud:
         whichever comes first
         '''
         
-        self.immediateStart("charge", hours)
+        return self.immediateStart("charge", hours)
         
     def stopCharge(self):
         ''' Stop a charge immediately
         
         '''
-        self.immediateStop()          
+        return self.immediateStop()          
 
 
     def startDischarge(self, hours=3):
@@ -436,13 +436,13 @@ class SolisCloud:
         whichever comes first
         '''
         
-        self.immediateStart("discharge", hours)
+        return self.immediateStart("discharge", hours)
         
     def stopDischarge(self):
         ''' Stop a charge immediately
         
         '''
-        self.immediateStop()       
+        return self.immediateStop()       
         
     def validateTimingsObj(self, timings):
         ''' Ensure that the timings dict meets the expectations of this class
