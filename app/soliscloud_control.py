@@ -237,7 +237,7 @@ class SolisCloud:
         self.printDebug(f'Generating a {action} timings payload for {timerange}')
         
         # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(self.config['inverter'])
+        timings = self.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
             # Fuck... what do we do now?
@@ -257,7 +257,7 @@ class SolisCloud:
             timings['slots'][slot]['charge'] = "00:00-00:00";
         
         # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(self.config['inverter'], timings)
+        res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
             # uh-oh
@@ -273,7 +273,7 @@ class SolisCloud:
         ''' Immediately stop charging and discharging
         '''
         # Get existing schedule and settings
-        timings = soliscloud.readChargeDischargeSchedule(self.config['inverter'])
+        timings = self.readChargeDischargeSchedule(self.config['inverter'])
         
         if not timings:
             # Fuck... what do we do now?
@@ -288,7 +288,7 @@ class SolisCloud:
         timings['slots'][slot]['discharge'] = "00:00-00:00";
         
         # Set the schedule
-        res2 = soliscloud.setChargeDischargeTimings(self.config['inverter'], timings)
+        res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
         
         if not res2:
             # uh-oh
