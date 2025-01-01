@@ -327,7 +327,7 @@ class SolisCloud:
         resp = r.json()
         self.printDebug(f'Got response: {resp}')
         
-        if not resp or "msg" not in resp or resp['msg'] != "success":
+        if not resp or "code" not in resp or resp["code"] != "0":
             return False
         
         
