@@ -48,7 +48,7 @@ Optional:
 
 ---
 
-### Inverter Time Slots
+## Inverter Time Slots
 
 Solis inverters have 6 timing slots within their registers, 3 each for charge and discharge.
 
@@ -63,7 +63,7 @@ The script itself only uses a single timeslot.
 
 ## Control Server
 
-This repo also contains a Dockerfile for an example control server, allowing HTTP API calls to be made in order to trigger functions.
+This repo also contains a Dockerfile for an example control server, allowing HTTP API calls to be made in order to trigger functions without the client having to implement Solis's authentication mechanism.
 
 The server uses HTTP Basic Authentication [by default](https://projects.bentasker.co.uk/gils_projects/issue/misc/soliscloud-inverter-control/3.html), so you should set a password in environment variable `PASS` (if you don't, it'll generate a random password for you):
 
@@ -158,7 +158,7 @@ Each of the attributes is optional
 
 ---
 
-### Copyright
+## Copyright
 
 Copyright (c) 2025 [B Tasker](https://www.bentasker.co.uk)
 Released under [BSD 3 clause license](https://www.bentasker.co.uk/pages/licenses/bsd-3-clause.html)
