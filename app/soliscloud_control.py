@@ -232,7 +232,7 @@ class SolisCloud:
         return f"{b}-{e}"
         
 
-    def immediateStart(self, action="charge", hours=3, exact=False):
+    def immediateStart(self, action="charge", hours=3, exact=False, rates=False):
         ''' Immediately start an action
         '''
                
@@ -266,6 +266,14 @@ class SolisCloud:
             timings['slots'][slot]['discharge'] = timerange;
             timings['slots'][slot]['charge'] = "00:00-00:00";
         
+        
+        if rates:
+            # The user also wants to change the rate
+            if "charge_current" in rates:
+                timings['charge_current'] = rates['charge_current']
+            if "discharge_current" in rates:
+                timings['discharge_current'] = rates['discharge_current']
+            
         # Set the schedule
         res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
         
@@ -285,7 +293,7 @@ class SolisCloud:
         return True
 
 
-    def immediateStop(self):
+    def immediateStop(self, rates=False):
         ''' Immediately stop charging and discharging
         '''
         # Get existing schedule and settings
@@ -308,6 +316,13 @@ class SolisCloud:
         slot = f"slot{self.config['dynamic_slot']}"
         timings['slots'][slot]['charge'] = "00:00-00:00";
         timings['slots'][slot]['discharge'] = "00:00-00:00";
+        
+        if rates:
+            # The user also wants to change the rate
+            if "charge_current" in rates:
+                timings['charge_current'] = rates['charge_current']
+            if "discharge_current" in rates:
+                timings['discharge_current'] = rates['discharge_current']
         
         # Set the schedule
         res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
@@ -440,36 +455,36 @@ class SolisCloud:
         
         return resp
         
-    def startCharge(self, hours=3, exact=False):
+    def startCharge(self, hours=3, exact=False, rates=False):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        return self.immediateStart("charge", hours, exact)
+        return self.immediateStart("charge", hours, exact, rates)
         
-    def stopCharge(self):
+    def stopCharge(self, rates=False):
         ''' Stop a charge immediately
         
         '''
-        return self.immediateStop()          
+        return self.immediateStop(rates)
 
 
-    def startDischarge(self, hours=3, exact=False):
+    def startDischarge(self, hours=3, exact=False, rates=False):
         ''' Start a charge immediately
         
         If not stopped before then, it'll stop in hours **or** at midnight
         whichever comes first
         '''
         
-        return self.immediateStart("discharge", hours, exact)
+        return self.immediateStart("discharge", hours, exact, rates)
         
-    def stopDischarge(self):
+    def stopDischarge(self, rates=False):
         ''' Stop a charge immediately
         
         '''
-        return self.immediateStop()       
+        return self.immediateStop(rates)
         
     def validateTimingsObj(self, timings):
         ''' Ensure that the timings dict meets the expectations of this class
