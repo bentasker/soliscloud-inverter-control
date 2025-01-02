@@ -597,8 +597,7 @@ def configFromEnv():
         # This is a safety net - maximum seconds to wait if we believe we'll
         # hit the rate limit. As long as this is higher than api_rate_limit it
         # should never actually be hit unless there's a bug.
-        "max_ratelimit_wait" : int(os.getenv("API_RATE_LIMIT_MAXWAIT", 8)),
-        "measurement" : os.getenv("MEASUREMENT", "solar_inverter")
+        "max_ratelimit_wait" : int(os.getenv("API_RATE_LIMIT_MAXWAIT", 8))
         }
 
 
