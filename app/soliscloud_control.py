@@ -454,6 +454,50 @@ class SolisCloud:
             return False
         
         return resp
+
+    def setCurrents(self, rates):
+        ''' Set the charge and discharge rates
+        '''
+        
+        # Get existing schedule and settings
+        timings = self.readChargeDischargeSchedule(self.config['inverter'])
+        
+        if not timings:
+            self.printDebug(f'Failed to fetch timings object')
+            if not self.config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
+            timings = self.readChargeDischargeSchedule(self.config['inverter'])
+            if not timings:
+                # Out of luck
+                return False
+
+        if "charge_current" in rates:
+            timings["charge_current"] = rates["charge_current"]
+            
+        if "discharge_current" in rates:
+            timings["discharge_current"] = rates["discharge_current"]
+        
+        # Write it back
+        # Set the schedule
+        res2 = self.setChargeDischargeTimings(self.config['inverter'], timings)
+        
+        if not res2:
+            self.printDebug(f'Failed to set currents')
+            if not self.config['do_retry']:
+                # Retries are disabled
+                return False
+            
+            self.printDebug(f'Will retry after {self.config["retry_delay_s"]}s')
+            time.sleep(self.config['retry_delay_s'])
+            if not self.readChargeDischargeSchedule(self.config['inverter']):
+                # Out of luck
+                return False
+        
+        return True
         
     def startCharge(self, hours=3, exact=False, rates=False):
         ''' Start a charge immediately

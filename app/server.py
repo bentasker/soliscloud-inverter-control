@@ -51,7 +51,22 @@ def version():
 
     return "Soliscloud Control - no auth headers\n"    
 
+@app.route('/api/v1/setCurrent', methods=['POST'])
+def setCurrent():
+    ''' Change the configured current but don't change schedules
+    '''
+    if not checkAuth(request.authorization):
+        return Response(status=403)    
+
+    rates = getCurrents(request.get_json(silent=True))
     
+    if not rates:
+        return Response(status=400)
+    
+    if soliscloud.setCurrents(rates):
+        return Response(status=200)
+    else:
+        return Response(status=502)
 
 @app.route('/api/v1/startCharge', methods=['POST'])
 def startCharge():
