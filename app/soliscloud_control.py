@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 #
-
-
+# Library to interface with Soliscloud's control api
+# This allows charging and discharging to be triggered
+# and charge rates to be amended
+#
 # Copyright (c) 2025, B Tasker
 # Released under BSD 3-Clause License
 #

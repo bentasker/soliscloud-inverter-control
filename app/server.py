@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 #
-
-
+# Example Control Server
+#
+# This is a small flask app to expose an API
+# allowing remote clients to pass calls by us
+#
 # Copyright (c) 2025, B Tasker
 # Released under BSD 3-Clause License
 #
