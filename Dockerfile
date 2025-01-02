@@ -11,4 +11,6 @@ ENV DO_AUTH=true
 ENV RETRIES_ENABLED=true
 ENV RETRY_DELAY=3
 
+LABEL org.opencontainers.image.source https://github.com/bentasker/soliscloud-inverter-control
+
 CMD /app/server.py
