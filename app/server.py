@@ -64,19 +64,25 @@ def startCharge():
     hours = 3
     exact = False
     
+    # Read the request body if present
     req = request.get_json(silent=True)
+    
+    # Get desired charge/discharge rates if provided
+    rates = getCurrents(req)
+    
     # Was there valid json in the request
-    if req and "end" in req:
-        # Split out the hours and minutes
-        t1 = req["end"].split(" ")[1]
-        t2 = t1.split(":")
-        exact = {
-            "hour" : int(t2[0]),
-            "minute" : int(t2[1])
-            }
+    if req: 
+        if "end" in req:
+            # Split out the hours and minutes
+            t1 = req["end"].split(" ")[1]
+            t2 = t1.split(":")
+            exact = {
+                "hour" : int(t2[0]),
+                "minute" : int(t2[1])
+                }
     
     # TODO check if hours are specified
-    if soliscloud.startCharge(hours, exact):
+    if soliscloud.startCharge(hours, exact, rates):
         return Response(status=200)
     else:
         return Response(status=502)
@@ -88,8 +94,14 @@ def startDischarge():
     if not checkAuth(request.authorization):
         return Response(status=403)    
     
+    # Read the request body if present
+    req = request.get_json(silent=True)
+    
+    # Get desired charge/discharge rates if provided
+    rates = getCurrents(req)
+    
     # TODO check if hours are specified
-    if soliscloud.startDischarge():
+    if soliscloud.startDischarge(rates):
         return Response(status=200)
     else:
         return Response(status=502)
@@ -101,8 +113,14 @@ def stopCharge():
     if not checkAuth(request.authorization):
         return Response(status=403)    
     
+    # Read the request body if present
+    req = request.get_json(silent=True)
+    
+    # Get desired charge/discharge rates if provided
+    rates = getCurrents(req)
+    
     # TODO check if hours are specified
-    if soliscloud.stopCharge():
+    if soliscloud.stopCharge(rates):
         return Response(status=200)
     else:
         return Response(status=502)
@@ -114,8 +132,14 @@ def stopDischarge():
     if not checkAuth(request.authorization):
         return Response(status=403)    
     
+    # Read the request body if present
+    req = request.get_json(silent=True)
+    
+    # Get desired charge/discharge rates if provided
+    rates = getCurrents(req)
+    
     # TODO check if hours are specified
-    if soliscloud.stopDischarge():
+    if soliscloud.stopDischarge(rates):
         return Response(status=200)
     else:
         return Response(status=502)
@@ -137,7 +161,25 @@ def checkAuth(auth):
         return True
     
     return False
+
+
+def getCurrents(req):
+    ''' Check if the request provides currents
+    '''
+    rates = False
     
+    if not req or ("charge_current" not in req and "discharge_current" not in req):
+        return False
+
+    rates = {}
+    if "charge_current" in req:
+        rates["charge_current"] =  req['charge_current']
+        
+    if "discharge_current" in req:
+        rates["discharge_current"] = req['charge_current']
+    
+    return rates
+
 
 if __name__ == "__main__":
 
