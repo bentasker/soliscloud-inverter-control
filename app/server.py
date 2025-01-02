@@ -176,7 +176,7 @@ def getCurrents(req):
         rates["charge_current"] =  req['charge_current']
         
     if "discharge_current" in req:
-        rates["discharge_current"] = req['charge_current']
+        rates["discharge_current"] = req['discharge_current']
     
     return rates
 
