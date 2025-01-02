@@ -1,9 +1,10 @@
 # Soliscloud Inverter Control Script
 
-A simple python class to interace with a Solis inverter via the Soliscloud Control API.
+A simple python class to interace with a Solis inverter via the [Soliscloud Control API](https://oss.soliscloud.com/doc/SolisCloud%20Device%20Control%20API%20V2.0.pdf).
 
 [Issue tracking](https://projects.bentasker.co.uk/gils_projects/project/misc/soliscloud-inverter-control.html).
 
+---
 
 ## Warning: Use At Your Own Risk
 
@@ -31,20 +32,40 @@ Use of this software is entirely at your own risk and the author accepts no liab
 ### Config
 
 The script takes configuration via environment variable:
-```sh
-export API_ID=1233456789
-export API_SECRET=blahblahlah
-export API_URL=https://www.soliscloud.com:13333
-export INVERTER_SERIAL=0987654321
-```
+
+Mandatory:
+
+* `API_ID`: Your soliscloud API key ID
+* `API_SECRET`: The secret for your API key
+* `INVERTER_SERIAL`: The serial number of your inverter (you can get this from the Soliscloud interface)
+
+Optional:
+
+* `DYNAMIC_SLOT`: Which timing slot to use. Valid values are 1,2 or 3 (default `3`)
+* `RETRIES_ENABLED`: Should the script retry (once) if Soliscloud returns a failure (default `true`)
+* `RETRY_DELAY`: Delay in seconds before retrying (default `3`)
+* `DEBUG`: When `true`, prints additional information to stdout
 
 ---
 
-### Example Control Server
+### Inverter Time Slots
+
+Solis inverters have 6 timing slots within their registers, 3 each for charge and discharge.
+
+The Soliscloud web interface won't allow you to configure overlapping/conflicting timeranges across slots. Their API, however, offers no such protection and it's not clear whether the inverter will hande this safely.
+
+
+To be safe, before using this script you should remove any timeslots that you have configured (by setting them all to 00:00).
+
+The script itself only uses a single timeslot.
+
+---
+
+## Control Server
 
 This repo also contains a Dockerfile for an example control server, allowing HTTP API calls to be made in order to trigger functions.
 
-The server uses HTTP Basic Authentication by default, so you should set a password in environment variable `PASS`:
+The server uses HTTP Basic Authentication [by default](https://projects.bentasker.co.uk/gils_projects/issue/misc/soliscloud-inverter-control/3.html), so you should set a password in environment variable `PASS` (if you don't, it'll generate a random password for you):
 
 ```sh
 docker run \
@@ -60,6 +81,78 @@ docker run \
 -p 8081:8080 \
 registry.bentasker.co.uk/misc/soliscloud-inverter-control:0.1a
 ```
+
+---
+
+## API
+
+The API only has a few endpoints, allowing charging and discharging to be started and stopped.
+
+
+
+### Endpoints
+
+#### `POST /api/v1/setCurrent`
+
+Set the charge and/or (forced) discharge current.
+
+Expects a JSON payload with `charge_current` and/or `discharge_current` attributes. 
+
+See below for details on the JSON payload.
+
+
+#### `POST /api/v1/startCharge`
+
+
+Switch to charge mode immediately.
+
+Optionally accepts a JSON request body, see below.
+
+If no JSON request body is present, or it lacks an `end` attribute, the end time will be set 3 hours in the future.
+
+
+#### `POST /api/v1/startDischarge`
+
+Start a forced discharge immediately.
+
+Optionally accepts a JSON request body, see below.
+
+If no JSON request body is present, or it lacks an `end` attribute, the end time will be set 3 hours in the future.
+
+
+#### `POST /api/v1/stopCharge`
+
+Stop the charge and or discharge. Works by zeroing out the schedule that the script interacts with.
+
+Optionally accepts a JSON request body, allowing charge rates to be set whilst stopping current charge.
+
+
+#### `POST /api/v1/stopDischarge`
+
+Stop the charge and or discharge. Works by zeroing out the schedule that the script interacts with.
+
+Optionally accepts a JSON request body, allowing charge rates to be set whilst stopping current charge.
+
+
+---
+
+### JSON payload
+
+The control server endpoints accept an optional JSON request body:
+
+```json
+{
+  "end": "2025-01-02 14:30:00+0000",
+  "charge_current": 30,
+  "discharge_current": 55
+}
+```
+
+Each of the attributes is optional
+
+* `end`: when to configure the inverter to end the charge/discharge period. The inverter uses a simple clock, so if this is beyond midnight it'll be converted to midnight. Only conumed by the `start*` endpoints
+* `charge_current`: current to use when charging. Consumed by `start*`, `stop*` and `setCurrent` endpoints
+* `discharge_current`: current to use when force discharging
 
 
 
