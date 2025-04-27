@@ -588,7 +588,7 @@ def configFromEnv():
         
         "api_id" : int(os.getenv("API_ID", 1234)),
         "api_secret" : os.getenv("API_SECRET", "abcde"),
-        "api_url" : os.getenv("API_URL", "https://tobeconfirmed").strip('/'),
+        "api_url" : os.getenv("API_URL", "https://www.soliscloud.com:13333").strip('/'),
         # Max number of requests per second
         "api_rate_limit" : int(os.getenv("API_RATE_LIMIT", 2)),
         
