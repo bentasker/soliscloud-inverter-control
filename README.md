@@ -82,6 +82,27 @@ docker run \
 ghcr.io/bentasker/soliscloud-inverter-control:0.1
 ```
 
+Or if you prefer docker compose
+
+```sh
+version: '3'
+
+services:
+  soliscloudcontrol:
+    image: ghcr.io/bentasker/soliscloud-inverter-control:0.1
+    container_name: soliscloudcontrol
+    restart: always
+    environment:
+      - API_ID=${SOLIS_API_KEY_ID}
+      - API_SECRET=${SOLIS_API_KEY_SECRET}
+      - INVERTER_SERIAL=${INVERTER_SERIAL_NUMBER}
+      - DO_AUTH=true
+      - USER=solisuser
+      - PASS=${LOCAL_API_PASS}
+    ports:
+      - 8081:8080
+```
+
 ---
 
 ## API
