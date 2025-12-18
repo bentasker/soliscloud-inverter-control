@@ -4,6 +4,7 @@ when:
   - event: cron
     cron: Weekly
 
+# Push image to GHCR
 steps:
 - name: publish
   image: woodpeckerci/plugin-docker-buildx
