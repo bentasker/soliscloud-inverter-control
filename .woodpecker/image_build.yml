@@ -1,0 +1,18 @@
+when:
+  - event: push
+    branch: master
+  - event: cron
+    cron: Weekly
+
+steps:
+- name: publish
+  image: woodpeckerci/plugin-docker-buildx
+  settings:
+    repo: ghcr.io/bentasker/soliscloud-inverter-control
+    registry: ghcr.io
+    platforms: linux/amd64,linux/arm64/v8
+    tags: weekly
+    username:
+      from_secret: github_username
+    password:
+      from_secret: github_token
