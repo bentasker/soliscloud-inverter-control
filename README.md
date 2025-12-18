@@ -79,7 +79,7 @@ docker run \
 -e USER=solisuser \
 -e PASS=$LOCAL_API_PASS \
 -p 8081:8080 \
-ghcr.io/bentasker/soliscloud-inverter-control:0.1
+ghcr.io/bentasker/soliscloud-inverter-control:weekly
 ```
 
 ---
